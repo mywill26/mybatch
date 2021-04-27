@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mycx26.base.excel.mapper.TemplateMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.mycx26.base.excel.entity.Template">
+        <id column="id" property="id" />
+        <result column="tmpl_code" property="tmplCode" />
+        <result column="category_code" property="categoryCode" />
+        <result column="tmpl_name" property="tmplName" />
+        <result column="file_name" property="fileName" />
+        <result column="description" property="description" />
+        <result column="start_row" property="startRow" />
+        <result column="is_uniqueness" property="isUniqueness" />
+        <result column="is_write_db" property="isWriteDb" />
+        <result column="db_strategy_code" property="dbStrategyCode" />
+        <result column="is_roolback" property="isRoolback" />
+        <result column="creator_id" property="creatorId" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier_id" property="modifierId" />
+        <result column="modify_time" property="modifyTime" />
+        <result column="yn" property="yn" />
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, tmpl_code, category_code, tmpl_name, file_name, description, start_row, is_uniqueness, is_write_db,
+        db_strategy_code, is_roolback, creator_id, create_time, modifier_id, modify_time, yn
+    </sql>
+
+</mapper>

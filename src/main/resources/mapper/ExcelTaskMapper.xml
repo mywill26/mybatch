@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mycx26.base.excel.mapper.ExcelTaskMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.mycx26.base.excel.entity.ExcelTask">
+        <id column="id" property="id" />
+        <result column="flow_no" property="flowNo" />
+        <result column="task_type_code" property="taskTypeCode" />
+        <result column="tmpl_type_code" property="tmplTypeCode" />
+        <result column="imp_file_name" property="impFileName" />
+        <result column="imp_file_path" property="impFilePath" />
+        <result column="exp_file_name" property="expFileName" />
+        <result column="exp_file_path" property="expFilePath" />
+        <result column="user_id" property="userId" />
+        <result column="task_status_code" property="taskStatusCode" />
+        <result column="is_error" property="error" />
+        <result column="is_exception" property="exception" />
+        <result column="success_count" property="successCount" />
+        <result column="failure_count" property="failureCount" />
+        <result column="total_count" property="totalCount" />
+        <result column="start_time" property="startTime" />
+        <result column="description" property="description" />
+        <result column="params" property="params" />
+        <result column="create_time" property="createTime" />
+        <result column="modify_time" property="modifyTime" />
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, flow_no, task_type_code, tmpl_type_code, imp_file_name, imp_file_path, exp_file_name, exp_file_path,
+        user_id, task_status_code, is_error, is_exception, success_count, failure_count, total_count, start_time,
+        description, params, create_time, modify_time
+    </sql>
+
+</mapper>

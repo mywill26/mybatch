@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mycx26.base.excel.mapper.TemplateColMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.mycx26.base.excel.entity.TemplateCol">
+        <id column="id" property="id" />
+        <result column="tmpl_code" property="tmplCode" />
+        <result column="table_name" property="tableName" />
+        <result column="col_name" property="colName" />
+        <result column="col_label" property="colLabel" />
+        <result column="col_type_code" property="colTypeCode" />
+        <result column="is_required" property="required" />
+        <result column="is_uniqueness" property="uniqueness" />
+        <result column="enum_type_code" property="enumTypeCode" />
+        <result column="order_no" property="orderNo" />
+        <result column="child_order_no" property="childOrderNo" />
+        <result column="creator_id" property="creatorId" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier_id" property="modifierId" />
+        <result column="modify_time" property="modifyTime" />
+        <result column="yn" property="yn" />
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, tmpl_code, table_name, col_name, col_label, col_type_code, is_required, is_uniqueness, enum_type_code,
+        order_no, child_order_no, creator_id, create_time, modifier_id, modify_time, yn
+    </sql>
+
+</mapper>
