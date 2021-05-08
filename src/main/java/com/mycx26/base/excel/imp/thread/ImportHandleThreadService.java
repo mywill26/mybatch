@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 /**
  * Core handle thread, coordinator for start post threads.
- *
+ * <p>
  * Created by mycx26 on 2019/10/29.
  */
 @Service
@@ -90,6 +90,13 @@ public class ImportHandleThreadService {
             try {
                 ExcelReaderSheetBuilder builder = EasyExcel.read(cloudFileService.downloadSteam(task.getImpFilePath()), listener)
                         .sheet().headRowNumber(importParam.getTemplate().getStartRow());
+                importParam.getCfs().get(0).exceptionally(e -> {
+                    expHandle(importParam, e);
+                    postHandle();
+                    return null;
+                });
+                importParam.getCfs().remove(0);
+                builder.doRead();
                 CompletableFuture.allOf((CompletableFuture[]) importParam.getCfs().toArray(new CompletableFuture[0]))
                         .thenRun(this::postHandle)
                         .exceptionally(e -> {
@@ -97,7 +104,6 @@ public class ImportHandleThreadService {
                             postHandle();
                             return null;
                         });
-                builder.doRead();
             } catch (Exception e) {
                 try {
                     if (listener.importWriteExcelThread != null) {
@@ -265,7 +271,6 @@ public class ImportHandleThreadService {
                         importWriteExcelThread = new ImportWriteExcelThread(importParam, cloudFileService);
                         CompletableFuture<String> future = CompletableFuture.supplyAsync(importWriteExcelThread, taskExecutor);
                         importParam.getCfs().add(future);
-
                     }
                     try {
                         importWriteExcelThread.getQueue().put(list);

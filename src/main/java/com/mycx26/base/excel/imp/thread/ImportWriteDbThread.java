@@ -43,22 +43,17 @@ public class ImportWriteDbThread implements Supplier<String> {
     public String get() {
         LOGGER.info(importParam.getTaskId() + "=============> ImportWriteDbThread start <=============");
 
-        for (; ; ) {
-            if (importParam.isException()) {
-                break;
-            }
+        while (!importParam.isException()) {
             List<String> row;
             try {
                 row = queue.take();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            if (row.isEmpty()) {
-                if (!rows.isEmpty()) {
-                    templateDbWriter.write(rows, importParam);
-                    rows.clear();
-                    break;
-                }
+            if (row.isEmpty() && !rows.isEmpty()) {
+                templateDbWriter.write(rows, importParam);
+                rows.clear();
+                break;
             }
             rows.add(row);
             if (importParam.getBatchCount() == rows.size()) {

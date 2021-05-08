@@ -72,10 +72,7 @@ public class ImportWriteExcelThread implements Supplier<String> {
     public String get() {
         LOGGER.info(importParam.getTaskId() + "=============> ImportWriteExcelThread start <=============");
 
-        for (; ; ) {
-            if (importParam.isException()) {
-                break;
-            }
+        while (!importParam.isException()) {
             List<String> row;
             try {
                 row = queue.take();
