@@ -8,6 +8,7 @@ import com.mycx26.base.excel.entity.Template;
 import com.mycx26.base.excel.imp.bo.ImportParam;
 import com.mycx26.base.excel.imp.enump.ExcelTaskStatus;
 import com.mycx26.base.excel.imp.enump.ExcelTaskType;
+import com.mycx26.base.excel.imp.validator.template.TemplateValidator;
 import com.mycx26.base.excel.property.BatchProperty;
 import com.mycx26.base.excel.service.ExcelTaskService;
 import com.mycx26.base.excel.service.TemplateService;
@@ -58,7 +59,7 @@ public class ImportMainThreadService {
 
     @Transactional(rollbackFor = Exception.class)
     public void startImp(MultipartFile file, String tmplCode, String userId, Map<String, Object> params) {
-        startImpValidate(file, tmplCode, userId);
+        startImpValidate(file, tmplCode, userId, params);
 
         ExcelTask task = initTask(tmplCode, userId, file, params);      // 1st, db task
 
@@ -68,7 +69,7 @@ public class ImportMainThreadService {
         taskExecutor.submit(importMainThread);
     }
 
-    private void startImpValidate(MultipartFile file, String tmplCode, String userId) {
+    private void startImpValidate(MultipartFile file, String tmplCode, String userId, Map<String, Object> params) {
         StringBuilder sb = new StringBuilder();
 
         if (null == file || file.isEmpty()) {
@@ -78,15 +79,15 @@ public class ImportMainThreadService {
             StringUtil.append(sb, "File must be xlsx");
         }
 
+        Template template = null;
         if (StringUtil.isBlank(tmplCode)) {
             StringUtil.append(sb, "Template code is required");
         } else {
-            Template template = templateService.getByCode(tmplCode);
+            template = templateService.getByCode(tmplCode);
             if (null == template) {
                 StringUtil.append(sb, "Template not exist");
             }
         }
-
         if (StringUtil.isBlank(userId)) {
             StringUtil.append(sb, "User id is required");
         }
@@ -95,6 +96,10 @@ public class ImportMainThreadService {
             sb.delete(sb.length() - 1, sb.length());
             throw new ParamException(sb.toString());
         }
+
+        assert template != null;
+        TemplateValidator tmplValidator = template.getTemplateValidator();
+        tmplValidator.validateParam(params);
     }
 
     private ExcelTask initTask(String tmplCode, String userId, MultipartFile file, Map<String, Object> params) {
