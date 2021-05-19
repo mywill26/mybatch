@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Main thread of scheduling all the tasks.
- *
+ * <p>
  * Created by mycx26 on 2019/10/30.
  */
 @Service
@@ -57,16 +58,27 @@ public class ImportMainThreadService {
     @Resource
     private BatchProperty batchProperty;
 
-    @Transactional(rollbackFor = Exception.class)
+    private ImportMainThreadService importMainThreadService;
+
+    @PostConstruct
+    private void init() {
+        importMainThreadService = SpringUtil.getBean(ImportMainThreadService.class);
+    }
+
+
     public void startImp(MultipartFile file, String tmplCode, String userId, Map<String, Object> params) {
+        importMainThreadService.doStartImp(file, tmplCode, userId, params);
+        // 3rd, start !!!
+        taskExecutor.submit(new ImportMainThread());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void doStartImp(MultipartFile file, String tmplCode, String userId, Map<String, Object> params) {
         startImpValidate(file, tmplCode, userId, params);
-
-        ExcelTask task = initTask(tmplCode, userId, file, params);      // 1st, db task
-
-        bakFile(file, task);    // 2nd, backup original file
-
-        ImportMainThread importMainThread = new ImportMainThread();   // 3rd, start !!!
-        taskExecutor.submit(importMainThread);
+        // 1st, db task
+        ExcelTask task = initTask(tmplCode, userId, file, params);
+        // 2nd, backup original file
+        bakFile(file, task);
     }
 
     private void startImpValidate(MultipartFile file, String tmplCode, String userId, Map<String, Object> params) {
@@ -141,7 +153,7 @@ public class ImportMainThreadService {
             LOGGER.info("=============> ImportMainThread start <=============");
 
             int count = excelTaskService.getImpRunningCount();
-            if (count > batchProperty.getImpMaxCount()) {    // todo config count
+            if (count > batchProperty.getImpMaxCount()) {
                 return;
             }
 
