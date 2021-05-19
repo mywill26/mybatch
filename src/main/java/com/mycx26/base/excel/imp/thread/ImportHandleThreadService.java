@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * Created by mycx26 on 2019/10/29.
  */
 @Service
-public class ImportHandleThreadService {
+class ImportHandleThreadService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImportWriteExcelThread.class);
 
@@ -149,8 +149,7 @@ public class ImportHandleThreadService {
 
             excelTaskService.updateById(task);
 
-            ImportMainThreadService.ImportMainThread importMainThread = importMainThreadService.new ImportMainThread();
-            taskExecutor.submit(importMainThread);
+            importMainThreadService.run();
         }
     }
 

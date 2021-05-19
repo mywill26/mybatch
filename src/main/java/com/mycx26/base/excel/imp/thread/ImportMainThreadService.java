@@ -12,16 +12,12 @@ import com.mycx26.base.excel.imp.validator.template.TemplateValidator;
 import com.mycx26.base.excel.property.BatchProperty;
 import com.mycx26.base.excel.service.ExcelTaskService;
 import com.mycx26.base.excel.service.TemplateService;
-import com.mycx26.base.excel.service.impl.ExcelTaskServiceImpl;
 import com.mycx26.base.exception.ParamException;
 import com.mycx26.base.service.file.CloudFileService;
 import com.mycx26.base.util.JacksonUtil;
 import com.mycx26.base.util.SpringUtil;
 import com.mycx26.base.util.StringUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,8 +37,6 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class ImportMainThreadService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ImportMainThreadService.class);
-
     @Resource
     private CloudFileService cloudFileService;
 
@@ -58,6 +52,9 @@ public class ImportMainThreadService {
     @Resource
     private BatchProperty batchProperty;
 
+    @Resource
+    private ImportHandleThreadService importHandleThreadService;
+
     private ImportMainThreadService importMainThreadService;
 
     @PostConstruct
@@ -69,7 +66,7 @@ public class ImportMainThreadService {
     public void startImp(MultipartFile file, String tmplCode, String userId, Map<String, Object> params) {
         importMainThreadService.doStartImp(file, tmplCode, userId, params);
         // 3rd, start !!!
-        taskExecutor.submit(new ImportMainThread());
+        taskExecutor.submit(this::run);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -140,46 +137,32 @@ public class ImportMainThreadService {
         );
     }
 
-    public class ImportMainThread implements Runnable {
-
-        private ExcelTaskService excelTaskService = SpringUtil.getBean(ExcelTaskServiceImpl.class);
-
-        private ImportHandleThreadService importHandleThreadService = SpringUtil.getBean(ImportHandleThreadService.class);
-
-        private ThreadPoolTaskExecutor taskExecutor = SpringUtil.getBean(ThreadPoolTaskExecutor.class);
-
-        @Override
-        public void run() {
-            LOGGER.info("=============> ImportMainThread start <=============");
-
-            int count = excelTaskService.getImpRunningCount();
-            if (count > batchProperty.getImpMaxCount()) {
-                return;
-            }
-
-            ExcelTask headTask = excelTaskService.getImpHead();
-            if (null == headTask) {
-                return;
-            }
-
-            boolean flag = excelTaskService.update(Wrappers.<ExcelTask>lambdaUpdate()
-                    .set(ExcelTask::getTaskStatusCode, ExcelTaskStatus.RUNNING.getCode())
-                    .set(ExcelTask::getStartTime, LocalDateTime.now())
-                    .eq(ExcelTask::getId, headTask.getId())
-                    .eq(ExcelTask::getTaskStatusCode, headTask.getTaskStatusCode())
-            );
-            if (!flag) {
-                return;
-            }
-
-            ImportParam importParam = new ImportParam();
-            importParam.setCfs(new ArrayList<>(3));
-            importParam.setBatchCount(batchProperty.getImpBatchCount());
-            ImportHandleThreadService.ImportHandleThread importHandleThread
-                    = importHandleThreadService.new ImportHandleThread(importParam, headTask);
-            importParam.getCfs().add(CompletableFuture.supplyAsync(importHandleThread, taskExecutor));
-
-            LOGGER.info("=============> ImportMainThread end <=============");
+    void run() {
+        int count = excelTaskService.getImpRunningCount();
+        if (count > batchProperty.getImpMaxCount()) {
+            return;
         }
+
+        ExcelTask headTask = excelTaskService.getImpHead();
+        if (null == headTask) {
+            return;
+        }
+
+        boolean flag = excelTaskService.update(Wrappers.<ExcelTask>lambdaUpdate()
+                .set(ExcelTask::getTaskStatusCode, ExcelTaskStatus.RUNNING.getCode())
+                .set(ExcelTask::getStartTime, LocalDateTime.now())
+                .eq(ExcelTask::getId, headTask.getId())
+                .eq(ExcelTask::getTaskStatusCode, headTask.getTaskStatusCode())
+        );
+        if (!flag) {
+            return;
+        }
+
+        ImportParam importParam = new ImportParam();
+        importParam.setCfs(new ArrayList<>(3));
+        importParam.setBatchCount(batchProperty.getImpBatchCount());
+        ImportHandleThreadService.ImportHandleThread importHandleThread
+                = importHandleThreadService.new ImportHandleThread(importParam, headTask);
+        importParam.getCfs().add(CompletableFuture.supplyAsync(importHandleThread, taskExecutor));
     }
 }

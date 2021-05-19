@@ -26,7 +26,7 @@
 
     <groupId>com.jd.mycx26</groupId>
     <artifactId>mybatch-spring-boot-starter</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <name>mybatch-spring-boot-starter</name>
 
     <properties>
