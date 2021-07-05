@@ -12,6 +12,8 @@ import com.mycx26.base.excel.imp.ExcelInitService;
 import com.mycx26.base.excel.imp.bo.ImportParam;
 import com.mycx26.base.excel.imp.enump.ExcelTaskStatus;
 import com.mycx26.base.excel.imp.enump.WriteDbStrategy;
+import com.mycx26.base.excel.imp.handler.ImportEndHandler;
+import com.mycx26.base.excel.imp.handler.ImportExpHandler;
 import com.mycx26.base.excel.imp.validator.template.TemplateValidator;
 import com.mycx26.base.excel.service.ExcelTaskService;
 import com.mycx26.base.excel.service.TemplateService;
@@ -19,6 +21,7 @@ import com.mycx26.base.exception.ParamException;
 import com.mycx26.base.exception.base.AppException;
 import com.mycx26.base.service.file.CloudFileService;
 import com.mycx26.base.util.JacksonUtil;
+import com.mycx26.base.util.SpringUtil;
 import com.mycx26.base.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,6 +136,12 @@ class ImportHandleThreadService {
             } else {
                 importParam.setException(true);
             }
+
+            // exception handle
+            ImportExpHandler importExpHandler = SpringUtil.getBean2(importParam.getTemplate().getTmplCode() + ImportExpHandler.EXP_HANDLER);
+            if (importExpHandler != null) {
+                importExpHandler.exp(importParam);
+            }
         }
 
         private void postHandle() {
@@ -148,6 +157,12 @@ class ImportHandleThreadService {
             task.setTotalCount(importParam.getTotalCount());
 
             excelTaskService.updateById(task);
+
+            // end handle
+            ImportEndHandler importEndHandler = SpringUtil.getBean2(importParam.getTemplate().getTmplCode() + ImportEndHandler.END_HANDLER);
+            if (importEndHandler != null) {
+                importEndHandler.end(importParam);
+            }
 
             importMainThreadService.run();
         }
