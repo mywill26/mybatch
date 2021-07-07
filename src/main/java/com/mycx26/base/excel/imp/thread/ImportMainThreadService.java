@@ -1,15 +1,12 @@
 package com.mycx26.base.excel.imp.thread;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.mycx26.base.excel.constant.ExcelConst;
 import com.mycx26.base.excel.entity.ExcelTask;
 import com.mycx26.base.excel.entity.Template;
-import com.mycx26.base.excel.imp.bo.ImportParam;
 import com.mycx26.base.excel.imp.enump.ExcelTaskStatus;
 import com.mycx26.base.excel.imp.enump.ExcelTaskType;
 import com.mycx26.base.excel.imp.validator.template.TemplateValidator;
-import com.mycx26.base.excel.property.BatchProperty;
 import com.mycx26.base.excel.service.ExcelTaskService;
 import com.mycx26.base.excel.service.TemplateService;
 import com.mycx26.base.exception.ParamException;
@@ -24,10 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Main thread of scheduling all the tasks.
@@ -50,9 +44,6 @@ public class ImportMainThreadService {
     private TemplateService templateService;
 
     @Resource
-    private BatchProperty batchProperty;
-
-    @Resource
     private ImportHandleThreadService importHandleThreadService;
 
     private ImportMainThreadService importMainThreadService;
@@ -66,7 +57,7 @@ public class ImportMainThreadService {
     public void startImp(MultipartFile file, String tmplCode, String userId, Map<String, Object> params) {
         importMainThreadService.doStartImp(file, tmplCode, userId, params);
         // 3rd, start !!!
-        taskExecutor.submit(this::run);
+        taskExecutor.submit(importHandleThreadService::run);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -135,34 +126,5 @@ public class ImportMainThreadService {
                 .set("imp_file_path", cloudPath)
                 .eq("id", excelTask.getId())
         );
-    }
-
-    void run() {
-        int count = excelTaskService.getImpRunningCount();
-        if (count > batchProperty.getImpMaxCount()) {
-            return;
-        }
-
-        ExcelTask headTask = excelTaskService.getImpHead();
-        if (null == headTask) {
-            return;
-        }
-
-        boolean flag = excelTaskService.update(Wrappers.<ExcelTask>lambdaUpdate()
-                .set(ExcelTask::getTaskStatusCode, ExcelTaskStatus.RUNNING.getCode())
-                .set(ExcelTask::getStartTime, LocalDateTime.now())
-                .eq(ExcelTask::getId, headTask.getId())
-                .eq(ExcelTask::getTaskStatusCode, headTask.getTaskStatusCode())
-        );
-        if (!flag) {
-            return;
-        }
-
-        ImportParam importParam = new ImportParam();
-        importParam.setCfs(new ArrayList<>(3));
-        importParam.setBatchCount(batchProperty.getImpBatchCount());
-        ImportHandleThreadService.ImportHandleThread importHandleThread
-                = importHandleThreadService.new ImportHandleThread(importParam, headTask);
-        importParam.getCfs().add(CompletableFuture.supplyAsync(importHandleThread, taskExecutor));
     }
 }

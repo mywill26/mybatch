@@ -4,6 +4,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.read.builder.ExcelReaderSheetBuilder;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.mycx26.base.excel.constant.ExcelConst;
 import com.mycx26.base.excel.entity.ExcelTask;
@@ -15,6 +16,7 @@ import com.mycx26.base.excel.imp.enump.WriteDbStrategy;
 import com.mycx26.base.excel.imp.handler.ImportEndHandler;
 import com.mycx26.base.excel.imp.handler.ImportExpHandler;
 import com.mycx26.base.excel.imp.validator.template.TemplateValidator;
+import com.mycx26.base.excel.property.BatchProperty;
 import com.mycx26.base.excel.service.ExcelTaskService;
 import com.mycx26.base.excel.service.TemplateService;
 import com.mycx26.base.exception.ParamException;
@@ -25,11 +27,11 @@ import com.mycx26.base.util.SpringUtil;
 import com.mycx26.base.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -64,9 +66,36 @@ class ImportHandleThreadService {
     @Resource
     private ExcelInitService excelInitService;
 
-    @Lazy
     @Resource
-    private ImportMainThreadService importMainThreadService;
+    private BatchProperty batchProperty;
+
+    void run() {
+        int count = excelTaskService.getImpRunningCount();
+        if (count > batchProperty.getImpMaxCount()) {
+            return;
+        }
+
+        ExcelTask headTask = excelTaskService.getImpHead();
+        if (null == headTask) {
+            return;
+        }
+
+        boolean flag = excelTaskService.update(Wrappers.<ExcelTask>lambdaUpdate()
+                .set(ExcelTask::getTaskStatusCode, ExcelTaskStatus.RUNNING.getCode())
+                .set(ExcelTask::getStartTime, LocalDateTime.now())
+                .eq(ExcelTask::getId, headTask.getId())
+                .eq(ExcelTask::getTaskStatusCode, headTask.getTaskStatusCode())
+        );
+        if (!flag) {
+            return;
+        }
+
+        ImportParam importParam = new ImportParam();
+        importParam.setCfs(new ArrayList<>(3));
+        importParam.setBatchCount(batchProperty.getImpBatchCount());
+        ImportHandleThreadService.ImportHandleThread importHandleThread = new ImportHandleThread(importParam, headTask);
+        importParam.getCfs().add(CompletableFuture.supplyAsync(importHandleThread, taskExecutor));
+    }
 
     public class ImportHandleThread implements Supplier<String> {
 
@@ -164,7 +193,7 @@ class ImportHandleThreadService {
                 importEndHandler.end(importParam);
             }
 
-            importMainThreadService.run();
+            run();
         }
     }
 
