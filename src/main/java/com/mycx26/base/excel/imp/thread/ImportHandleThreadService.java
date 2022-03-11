@@ -25,6 +25,7 @@ import com.mycx26.base.service.file.CloudFileService;
 import com.mycx26.base.util.JacksonUtil;
 import com.mycx26.base.util.SpringUtil;
 import com.mycx26.base.util.StringUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
  * <p>
  * Created by mycx26 on 2019/10/29.
  */
+@Slf4j
 @Service
 class ImportHandleThreadService {
 
@@ -74,7 +76,7 @@ class ImportHandleThreadService {
         if (count > batchProperty.getImpMaxCount()) {
             return;
         }
-
+        // get head task in queue
         ExcelTask headTask = excelTaskService.getImpHead();
         if (null == headTask) {
             return;
@@ -156,8 +158,7 @@ class ImportHandleThreadService {
         }
 
         private void expHandle(ImportParam importParam, Throwable e) {
-            LOGGER.error(importParam.getTaskId()
-                    + "task=============> child thread exp <=============", e);
+            LOGGER.error(importParam.getTaskId() + "task=============> child thread exp <=============", e);
             if (e.getCause().getCause() instanceof AppException) {
                 importParam.setError(true);
                 importParam.setException(false);
@@ -167,15 +168,19 @@ class ImportHandleThreadService {
             }
 
             // exception handle
-            ImportExpHandler importExpHandler = SpringUtil.getBean2(importParam.getTemplate().getTmplCode() + ImportExpHandler.EXP_HANDLER);
-            if (importExpHandler != null) {
-                importExpHandler.exp(importParam);
+            TemplateValidator validator = SpringUtil.getBean2(importParam.getTemplate().getTmplCode() + TemplateValidator.TMPL_VALIDATOR);
+            if (validator instanceof ImportExpHandler) {
+                // in case of exp in exp handle
+                try {
+                    ((ImportExpHandler)validator).exp(importParam);
+                } catch (Exception ex) {
+                    log.error("Exp handle exp: ", ex);
+                }
             }
         }
 
         private void postHandle() {
             ExcelTask task = new ExcelTask();
-
             task.setId(importParam.getTaskId());
             task.setException(importParam.isException());
             task.setError(importParam.isError());
@@ -188,11 +193,16 @@ class ImportHandleThreadService {
             excelTaskService.updateById(task);
 
             // end handle
-            ImportEndHandler importEndHandler = SpringUtil.getBean2(importParam.getTemplate().getTmplCode() + ImportEndHandler.END_HANDLER);
-            if (importEndHandler != null) {
-                importEndHandler.end(importParam);
+            if (!importParam.isException() && !importParam.isError()) {
+                TemplateValidator validator = SpringUtil.getBean2(importParam.getTemplate().getTmplCode() + TemplateValidator.TMPL_VALIDATOR);
+                if (validator instanceof ImportEndHandler) {
+                    try {
+                        ((ImportEndHandler)validator).end(importParam);
+                    } catch (Exception e) {
+                        log.error("End handle exp: ", e);
+                    }
+                }
             }
-
             run();
         }
     }
@@ -262,16 +272,13 @@ class ImportHandleThreadService {
 
             Set<String> dbUniques = Collections.emptySet();
             TemplateValidator tmplValidator = template.getTemplateValidator();
-
             if (isUniqueness) {
                 int uniqueOrderNo = template.getUniqueOrderNo();
-
                 List<String> uniques = rows.stream().map(e -> e.get(uniqueOrderNo - 1)).collect(Collectors.toList());
                 dbUniques = tmplValidator.getUniqueData(uniques);
             }
 
             Set<String> finalDbUniques = dbUniques;
-
             rows.forEach(row -> {
                 StringBuilder error = new StringBuilder();
 
@@ -280,7 +287,6 @@ class ImportHandleThreadService {
                 // ======================= base validate tier =======================
 
                 // ======================= template validate tier =======================
-
                 if (isUniqueness) {
                     String uniqueValue = row.get(template.getUniqueOrderNo() - 1);
                     if (StringUtil.isNotBlank(uniqueValue)) {
@@ -288,7 +294,8 @@ class ImportHandleThreadService {
                             if (finalDbUniques.contains(uniqueValue)) {
                                 StringUtil.append(error, "数据已存在");
                             }
-                        } else if (WriteDbStrategy.UPDATE.getCode().equals(dbStrategyCode) || WriteDbStrategy.ALL.getCode().equals(dbStrategyCode)) {
+                        } else if (WriteDbStrategy.UPDATE.getCode().equals(dbStrategyCode)
+                                || WriteDbStrategy.ALL.getCode().equals(dbStrategyCode)) {
                             if (!finalDbUniques.contains(uniqueValue)) {
                                 StringUtil.append(error, "数据不存在");
                             }
@@ -296,7 +303,9 @@ class ImportHandleThreadService {
                     }
                 }
 
-                tmplValidator.validate(row, importParam, error);
+                if (0 == error.length()) {
+                    tmplValidator.validate(row, importParam, error);
+                }
                 // ======================= template validate tier =======================
 
                 if (error.length() > 0) {

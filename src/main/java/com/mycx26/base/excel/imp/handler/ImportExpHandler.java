@@ -11,8 +11,6 @@ import com.mycx26.base.excel.imp.bo.ImportParam;
 @FunctionalInterface
 public interface ImportExpHandler {
 
-    String EXP_HANDLER = "ExpHandler";
-
     /**
      * callback when the import task exception
      *

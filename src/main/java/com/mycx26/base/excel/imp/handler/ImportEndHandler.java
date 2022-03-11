@@ -11,10 +11,8 @@ import com.mycx26.base.excel.imp.bo.ImportParam;
 @FunctionalInterface
 public interface ImportEndHandler {
 
-    String END_HANDLER = "EndHandler";
-
     /**
-     * callback when the import task end
+     * callback when the import task end with success
      *
      * @param importParam import param
      */
