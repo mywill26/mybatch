@@ -35,7 +35,9 @@ public class GeneralExcelWriter {
         }
 
         // 临时解决阿里巴巴 EasyExcel(2.1.0-beta4) 当head只有一列时，数据列第一列不会写入excel
-//        heads.add("错误信息");
+        if (1 == heads.size()) {
+            heads.add("content");
+        }
         excelWriter = EasyExcel.write(filePath).head(initHeads(heads))
                 .registerWriteHandler(getStrategy()).build();
         writeSheet = EasyExcel.writerSheet(SHEET_NAME).build();
