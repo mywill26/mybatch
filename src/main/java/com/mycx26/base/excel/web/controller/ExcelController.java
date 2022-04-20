@@ -30,7 +30,7 @@ public class ExcelController {
 
     @PostMapping("imp")
     @ResponseBody
-    public Message imp(String tmplCode, MultipartFile file,
+    public Message<?> imp(String tmplCode, MultipartFile file,
                        @RequestParam Map<String, Object> params) {
         importMainThreadService.startImp(file, tmplCode, UserContext.getUserId(), params);
 
@@ -39,7 +39,7 @@ public class ExcelController {
 
     @PostMapping("exp")
     @ResponseBody
-    public Message exp(@RequestParam Map<String, Object> params) {
+    public Message<?> exp(@RequestParam Map<String, Object> params) {
         String tmplCode = (String) params.get(ExpConst.TEMPLATE_CODE);
         params.remove(ExpConst.TEMPLATE_CODE);
 

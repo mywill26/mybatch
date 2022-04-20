@@ -228,7 +228,7 @@ class ImportHandleThreadService {
             int colSize = importParam.getTemplate().getCols().size();
 
             if (row.size() > colSize) {
-                throw new ParamException("模版错误");
+                throw new ParamException("模板错误");
             } else if (row.size() < colSize) {
                 for (int i = 0, size = colSize - row.size(); i < size; i++) {
                     row.add(StringUtil.EMPTY);

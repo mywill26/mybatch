@@ -8,6 +8,7 @@ import com.mycx26.base.util.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -34,8 +35,10 @@ public class MethodReader extends ExportSourceReader {
             Method method = object.getClass().getDeclaredMethod(methodName, int.class, ExportParam.class);
             method.setAccessible(true);
             rowList = (List<Map<String, Object>>) method.invoke(object, current, exportParam);
+        } catch (InvocationTargetException e) {
+            throw new AppException(e.getTargetException().getMessage());
         } catch (Exception e) {
-            throw new AppException("Method reader read error: ", e);
+            throw new RuntimeException(e);
         }
 
         return postHandle(rowList, exportParam.getTemplate().getCols());

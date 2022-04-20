@@ -16,6 +16,7 @@ import com.mycx26.base.excel.service.ExcelTaskService;
 import com.mycx26.base.excel.service.GeneralExcelWriter;
 import com.mycx26.base.excel.service.TemplateService;
 import com.mycx26.base.excel.util.ExcelUtil;
+import com.mycx26.base.exception.base.AppException;
 import com.mycx26.base.service.file.CloudFileService;
 import com.mycx26.base.util.ObjectUtil;
 import org.slf4j.Logger;
@@ -144,14 +145,17 @@ public class ExportMainThreadService {
                     count++;
                 }
                 overHandle();
+            } catch (AppException e) {
+                exportParam.setError(true);
+                exportParam.setExpDesc(e.getMessage());
             } catch (Exception e) {
                 LOGGER.error("Export main thread exp: ", e);
                 exportParam.setException(true);
             }
 
             ExcelTask task = new ExcelTask();
-
             task.setId(exportParam.getTaskId())
+                    .setError(exportParam.isError())
                     .setException(exportParam.isException())
                     .setTaskStatusCode(ExcelTaskStatus.FINISH.getCode())
                     .setDescription(exportParam.getExpDesc());
@@ -173,7 +177,7 @@ public class ExportMainThreadService {
             excelTaskService.updateById(task);
 
             if (!file.delete()) {
-                LOGGER.error("[{}]file delete fail");
+                LOGGER.error("File delete fail [{}]", file.getAbsolutePath());
             }
         }
     }

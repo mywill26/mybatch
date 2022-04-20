@@ -12,4 +12,6 @@ public class ExcelConst {
     public static final String EXCEL_2007_SUFFIX = ".xlsx";
 
     public static final String SUCCESS = "success";
+
+    public static final int ROW_THRESHOLD = 1048575;
 }

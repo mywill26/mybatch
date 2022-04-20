@@ -15,6 +15,8 @@ public class ExportParam {
 
     private Template template;
 
+    private volatile boolean error = false;
+
     private volatile boolean exception = false;
 
     private String writePath;
@@ -47,6 +49,14 @@ public class ExportParam {
 
     public void setTemplate(Template template) {
         this.template = template;
+    }
+
+    public boolean isError() {
+        return error;
+    }
+
+    public void setError(boolean error) {
+        this.error = error;
     }
 
     public boolean isException() {
