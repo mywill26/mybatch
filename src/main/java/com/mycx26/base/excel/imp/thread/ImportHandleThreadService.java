@@ -92,25 +92,31 @@ class ImportHandleThreadService {
             return;
         }
 
-        ImportParam importParam = new ImportParam();
-        importParam.setCfs(new ArrayList<>(3));
-        importParam.setBatchCount(batchProperty.getImpBatchCount());
-        ImportHandleThreadService.ImportHandleThread importHandleThread = new ImportHandleThread(importParam, headTask);
+        ImportParam importParam = initParam(headTask);
+        ImportHandleThreadService.ImportHandleThread importHandleThread = new ImportHandleThread(importParam);
         importParam.getCfs().add(CompletableFuture.supplyAsync(importHandleThread, taskExecutor));
     }
 
-    public class ImportHandleThread implements Supplier<String> {
+    private ImportParam initParam(ExcelTask task) {
+        ImportParam importParam = new ImportParam();
+        importParam.setUserId(task.getUserId());
+        importParam.setTaskId(task.getId());
+        importParam.setTemplate(templateService.getByCode(task.getTmplTypeCode()));
+        importParam.setParams(JacksonUtil.parseObject(task.getParams(), new TypeReference<Map<String, Object>>() {
+        }));
+        importParam.setWritePath(excelInitService.getImpErrorPath().getAbsolutePath());
+        importParam.setBatchCount(batchProperty.getImpBatchCount());
+
+        importParam.setCfs(new ArrayList<>(3));
+
+        return importParam;
+    }
+
+    private class ImportHandleThread implements Supplier<String> {
 
         private ImportParam importParam;
 
-        ImportHandleThread(ImportParam importParam, ExcelTask task) {
-            importParam.setUserId(task.getUserId());
-            importParam.setTaskId(task.getId());
-            importParam.setParams(JacksonUtil.parseObject(task.getParams(), new TypeReference<Map<String, Object>>() {
-            }));
-            importParam.setTemplate(templateService.getByCode(task.getTmplTypeCode()));
-            importParam.setWritePath(excelInitService.getImpErrorPath().getAbsolutePath());
-
+        ImportHandleThread(ImportParam importParam) {
             this.importParam = importParam;
         }
 
@@ -126,16 +132,13 @@ class ImportHandleThreadService {
                         .sheet().headRowNumber(importParam.getTemplate().getStartRow());
                 importParam.getCfs().get(0).exceptionally(e -> {
                     expHandle(importParam, e);
-                    postHandle();
                     return null;
                 });
-                importParam.getCfs().remove(0);
                 builder.doRead();
-                CompletableFuture.allOf((CompletableFuture[]) importParam.getCfs().toArray(new CompletableFuture[0]))
+                CompletableFuture.allOf(importParam.getCfs().toArray(new CompletableFuture[0]))
                         .thenRun(this::postHandle)
                         .exceptionally(e -> {
                             expHandle(importParam, e);
-                            postHandle();
                             return null;
                         });
             } catch (Exception e) {
@@ -168,7 +171,8 @@ class ImportHandleThreadService {
             }
 
             // exception handle
-            TemplateValidator validator = SpringUtil.getBean2(importParam.getTemplate().getTmplCode() + TemplateValidator.TMPL_VALIDATOR);
+            TemplateValidator validator = SpringUtil
+                    .getBean2(importParam.getTemplate().getTmplCode() + TemplateValidator.TMPL_VALIDATOR);
             if (validator instanceof ImportExpHandler) {
                 // in case of exp in exp handle
                 try {
@@ -177,6 +181,7 @@ class ImportHandleThreadService {
                     log.error("Exp handle exp: ", ex);
                 }
             }
+            postHandle();
         }
 
         private void postHandle() {
@@ -194,7 +199,8 @@ class ImportHandleThreadService {
 
             // end handle
             if (!importParam.isException() && !importParam.isError()) {
-                TemplateValidator validator = SpringUtil.getBean2(importParam.getTemplate().getTmplCode() + TemplateValidator.TMPL_VALIDATOR);
+                TemplateValidator validator = SpringUtil
+                        .getBean2(importParam.getTemplate().getTmplCode() + TemplateValidator.TMPL_VALIDATOR);
                 if (validator instanceof ImportEndHandler) {
                     try {
                         ((ImportEndHandler)validator).end(importParam);
@@ -259,10 +265,7 @@ class ImportHandleThreadService {
         }
 
         private void doHandle() {
-            if (importParam.isException()) {
-                return;
-            }
-            if (rows.isEmpty()) {
+            if (importParam.isException() || rows.isEmpty()) {
                 return;
             }
 
@@ -281,7 +284,6 @@ class ImportHandleThreadService {
             Set<String> finalDbUniques = dbUniques;
             rows.forEach(row -> {
                 StringBuilder error = new StringBuilder();
-
                 // ======================= base validate tier =======================
                 template.getValidators().forEach(validator -> validator.validate(row, template, error));
                 // ======================= base validate tier =======================
@@ -302,7 +304,6 @@ class ImportHandleThreadService {
                         }
                     }
                 }
-
                 if (0 == error.length()) {
                     tmplValidator.validate(row, importParam, error);
                 }
@@ -314,19 +315,18 @@ class ImportHandleThreadService {
                 }
 
                 ArrayList<String> list = new ArrayList<>(row.size() + 6);
-                //noinspection unchecked
+                //noinspection unchecked,rawtypes
                 list.addAll((ArrayList<String>) ((ArrayList) row).clone());
 
                 if (error.length() > 0) {
                     importParam.addFailureCount();
                     if (null == importWriteExcelThread) {
                         importWriteExcelThread = new ImportWriteExcelThread(importParam, cloudFileService);
-                        CompletableFuture<String> future = CompletableFuture.supplyAsync(importWriteExcelThread, taskExecutor);
-                        importParam.getCfs().add(future);
+                        importParam.getCfs().add(CompletableFuture.supplyAsync(importWriteExcelThread, taskExecutor));
                     }
                     try {
                         importWriteExcelThread.getQueue().put(list);
-                    } catch (Exception e) {
+                    } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                 } else {
@@ -334,8 +334,7 @@ class ImportHandleThreadService {
                     if (template.getIsWriteDb()) {
                         if (null == importWriteDbThread) {
                             importWriteDbThread = new ImportWriteDbThread(importParam);
-                            CompletableFuture<String> future = CompletableFuture.supplyAsync(importWriteDbThread, taskExecutor);
-                            importParam.getCfs().add(future);
+                            importParam.getCfs().add(CompletableFuture.supplyAsync(importWriteDbThread, taskExecutor));
                         }
                         try {
                             importWriteDbThread.getQueue().put(list);

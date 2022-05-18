@@ -30,7 +30,7 @@ public class ImportParam {
 
     private int batchCount;
 
-    private List<CompletableFuture<String>> cfs;
+    private volatile List<CompletableFuture<String>> cfs;
 
     public String getUserId() {
         return userId;

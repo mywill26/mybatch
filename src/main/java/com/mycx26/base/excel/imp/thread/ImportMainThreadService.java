@@ -24,7 +24,7 @@ import javax.annotation.Resource;
 import java.util.Map;
 
 /**
- * Main thread of scheduling all the tasks.
+ * Main thread service of scheduling all the tasks.
  * <p>
  * Created by mycx26 on 2019/10/30.
  */
