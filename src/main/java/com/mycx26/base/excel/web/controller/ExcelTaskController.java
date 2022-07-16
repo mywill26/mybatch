@@ -7,6 +7,7 @@ import com.mycx26.base.excel.service.query.ExcelTaskQuery;
 import com.mycx26.base.service.dto.Message;
 import com.mycx26.base.service.dto.PageData;
 import com.mycx26.base.service.file.CloudFileService;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,6 +31,7 @@ public class ExcelTaskController {
     @Resource
     private ExcelTaskService excelTaskService;
 
+    @Lazy
     @Resource
     private CloudFileService cloudFileService;
 

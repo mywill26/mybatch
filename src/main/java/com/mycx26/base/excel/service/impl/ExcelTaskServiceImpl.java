@@ -19,6 +19,7 @@ import com.mycx26.base.service.EnumValueService;
 import com.mycx26.base.service.dto.PageData;
 import com.mycx26.base.service.file.CloudFileService;
 import com.mycx26.base.util.StringUtil;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -40,6 +41,7 @@ public class ExcelTaskServiceImpl extends ServiceImpl<ExcelTaskMapper, ExcelTask
     @Resource
     private TemplateService templateService;
 
+    @Lazy
     @Resource
     private CloudFileService cloudFileService;
 

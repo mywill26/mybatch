@@ -21,6 +21,7 @@ import com.mycx26.base.service.file.CloudFileService;
 import com.mycx26.base.util.ObjectUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +41,7 @@ public class ExportMainThreadService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExportMainThreadService.class);
 
+    @Lazy
     @Resource
     private CloudFileService cloudFileService;
 

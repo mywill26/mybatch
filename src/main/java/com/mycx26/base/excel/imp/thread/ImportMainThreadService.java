@@ -14,6 +14,7 @@ import com.mycx26.base.service.file.CloudFileService;
 import com.mycx26.base.util.JacksonUtil;
 import com.mycx26.base.util.SpringUtil;
 import com.mycx26.base.util.StringUtil;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ import java.util.Map;
 @Service
 public class ImportMainThreadService {
 
+    @Lazy
     @Resource
     private CloudFileService cloudFileService;
 

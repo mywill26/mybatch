@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Import;
 @MapperScan(basePackages = "com.mycx26.base.mapper", annotationClass = Mapper0.class)
 @Import({ EnumTypeServiceImpl.class, EnumValueServiceImpl.class })
 @MapperScan({"com.mycx26.base.excel.mapper"})
-@ComponentScan(basePackages = {"com.mycx26.base.excel"},
+@ComponentScan(basePackages = {"com.mycx26.base.excel", "com.mycx26.base.config.cache"},
         basePackageClasses = {SpringUtil.class, BaseDaoImpl.class})
 @Configuration
 public class MybatchConfig {
