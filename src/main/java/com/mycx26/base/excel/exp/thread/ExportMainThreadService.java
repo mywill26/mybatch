@@ -75,7 +75,7 @@ public class ExportMainThreadService {
         ExcelTask task = initTask(tmplCode, userId);
         ExportMainThread exportMainThread = new ExportMainThread(params, task, template);
 
-        taskExecutor.submit(exportMainThread);
+        taskExecutor.execute(exportMainThread);
 
         return task.getId();
     }

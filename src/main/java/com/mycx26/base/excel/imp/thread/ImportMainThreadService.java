@@ -59,7 +59,7 @@ public class ImportMainThreadService {
     public void startImp(MultipartFile file, String tmplCode, String userId, Map<String, Object> params) {
         importMainThreadService.doStartImp(file, tmplCode, userId, params);
         // 3rd, run !!!
-        taskExecutor.submit(importHandleThreadService::run);
+        taskExecutor.execute(importHandleThreadService::run);
     }
 
     @Transactional(rollbackFor = Exception.class)
