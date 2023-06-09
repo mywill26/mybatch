@@ -26,12 +26,12 @@
 
     <groupId>com.jd.mycx26</groupId>
     <artifactId>mybatch-spring-boot-starter</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.4</version>
     <name>mybatch-spring-boot-starter</name>
 
     <properties>
-        <mybase-spring-boot-starter.version>1.0.22</mybase-spring-boot-starter.version>
-        <easyexcel.version>2.2.6</easyexcel.version>
+        <mybase-spring-boot-starter.version>1.0.32</mybase-spring-boot-starter.version>
+        <easyexcel.version>3.3.2</easyexcel.version>
     </properties>
 
     <dependencyManagement>
