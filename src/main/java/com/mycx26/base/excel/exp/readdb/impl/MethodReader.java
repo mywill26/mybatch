@@ -36,7 +36,11 @@ public class MethodReader extends ExportSourceReader {
             method.setAccessible(true);
             rowList = (List<Map<String, Object>>) method.invoke(object, current, exportParam);
         } catch (InvocationTargetException e) {
-            throw new AppException(e.getTargetException().getMessage());
+            if (e.getTargetException() instanceof AppException) {
+                throw new AppException(e.getTargetException().getMessage());
+            } else {
+                throw new RuntimeException(e);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
