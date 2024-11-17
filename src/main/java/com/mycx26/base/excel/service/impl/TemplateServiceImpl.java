@@ -3,9 +3,9 @@ package com.mycx26.base.excel.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.mycx26.base.constant.CacheConstant;
 import com.mycx26.base.enump.ColTypeEnum;
 import com.mycx26.base.enump.Yn;
+import com.mycx26.base.excel.constant.ExcelCacheConst;
 import com.mycx26.base.excel.entity.Template;
 import com.mycx26.base.excel.entity.TemplateCol;
 import com.mycx26.base.excel.imp.enump.ExcelTaskType;
@@ -48,7 +48,7 @@ public class TemplateServiceImpl extends ServiceImpl<TemplateMapper, Template> i
         templateService = SpringUtil.getBean(TemplateServiceImpl.class);
     }
 
-    @Cacheable(value = CacheConstant.IE_TEMPLATE, key = "#tmplCode",
+    @Cacheable(value = ExcelCacheConst.IE_TEMPLATE, key = "#tmplCode",
             condition = "#tmplCode != null", unless = "null == #result")
     @Override
     public Template getByCode(String tmplCode) {
@@ -132,7 +132,7 @@ public class TemplateServiceImpl extends ServiceImpl<TemplateMapper, Template> i
         return template;
     }
 
-    @CacheEvict(value = CacheConstant.IE_TEMPLATE, key = "#typeCode")
+    @CacheEvict(value = ExcelCacheConst.IE_TEMPLATE, key = "#typeCode")
     @Override
     public void deleteCacheByCode(String typeCode) {
     }
