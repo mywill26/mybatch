@@ -21,4 +21,14 @@ public interface TemplateMethod {
     default Integer getOrderByTblAndCol(String tblName, String colName, Template template) {
         return template.getTblColOrderMap().get(tblName).get(colName);
     }
+
+    default void setValueByTblAndCol(String tblName, String colName, String value,
+                                     List<String> values, Template template) {
+        Integer order = getOrderByTblAndCol(tblName, colName, template);
+        if (null == order) {
+            return;
+        }
+
+        values.set(order - 1, value);
+    }
 }

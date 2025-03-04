@@ -13,8 +13,7 @@ import com.mycx26.base.excel.imp.ExcelInitService;
 import com.mycx26.base.excel.imp.bo.ImportParam;
 import com.mycx26.base.excel.imp.enump.ExcelTaskStatus;
 import com.mycx26.base.excel.imp.enump.WriteDbStrategy;
-import com.mycx26.base.excel.imp.handler.ImportEndHandler;
-import com.mycx26.base.excel.imp.handler.ImportExpHandler;
+import com.mycx26.base.excel.imp.handler.ImpLifeHandler;
 import com.mycx26.base.excel.imp.validator.template.TemplateValidator;
 import com.mycx26.base.excel.property.BatchProperty;
 import com.mycx26.base.excel.service.ExcelTaskService;
@@ -172,17 +171,6 @@ class ImportHandleThreadService {
                 importParam.setException(true);
             }
 
-            // exception handle
-            TemplateValidator validator = SpringUtil
-                    .getBean2(importParam.getTemplate().getTmplCode() + TemplateValidator.TMPL_VALIDATOR);
-            if (validator instanceof ImportExpHandler) {
-                // in case of exp in exp handle
-                try {
-                    ((ImportExpHandler)validator).exp(importParam);
-                } catch (Exception ex) {
-                    log.error("Exp handle exp: ", ex);
-                }
-            }
             postHandle();
         }
 
@@ -200,17 +188,13 @@ class ImportHandleThreadService {
             excelTaskService.updateById(task);
 
             // end handle
-            if (!importParam.isException() && !importParam.isError()) {
-                TemplateValidator validator = SpringUtil
-                        .getBean2(importParam.getTemplate().getTmplCode() + TemplateValidator.TMPL_VALIDATOR);
-                if (validator instanceof ImportEndHandler) {
-                    try {
-                        ((ImportEndHandler)validator).end(importParam);
-                    } catch (Exception e) {
-                        log.error("End handle exp: ", e);
-                    }
-                }
+            ImpLifeHandler handler = SpringUtil.getBean2(
+                    importParam.getTemplate().getTmplCode() + ImpLifeHandler.IMP_LIFE_HANDLER);
+            if (null == handler) {
+                return;
             }
+            handler.onEnd(importParam);
+
             run();
         }
     }

@@ -5,6 +5,7 @@ import com.mycx26.base.excel.entity.Template;
 import com.mycx26.base.excel.entity.TemplateCol;
 import com.mycx26.base.excel.exp.bo.ExportParam;
 import com.mycx26.base.excel.exp.enump.ExportSource;
+import com.mycx26.base.excel.exp.handler.ExpLifeHandler;
 import com.mycx26.base.excel.exp.readdb.ExportSourceReader;
 import com.mycx26.base.excel.exp.readdb.impl.MethodReader;
 import com.mycx26.base.excel.exp.readdb.impl.SqlDbReader;
@@ -19,6 +20,7 @@ import com.mycx26.base.excel.util.ExcelUtil;
 import com.mycx26.base.exception.base.AppException;
 import com.mycx26.base.service.file.CloudFileService;
 import com.mycx26.base.util.ObjectUtil;
+import com.mycx26.base.util.SpringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -132,7 +134,7 @@ public class ExportMainThreadService {
 
         @Override
         public void run() {
-            LOGGER.info("=============> ExportMainThread start <=============");
+            LOGGER.info("=============> ExportMainThread start: {} <=============", exportParam.getTaskId());
 
             int count = 1;
             try {
@@ -163,8 +165,9 @@ public class ExportMainThreadService {
                     .setDescription(exportParam.getExpDesc());
 
             excelTaskService.updateById(task);
+            lifeHandle(exportParam);
 
-            LOGGER.info("=============> ExportMainThread end <=============");
+            LOGGER.info("=============> ExportMainThread end: {} <=============", exportParam.getTaskId());
         }
 
         private void overHandle() {
@@ -179,8 +182,23 @@ public class ExportMainThreadService {
             excelTaskService.updateById(task);
 
             if (!file.delete()) {
-                LOGGER.error("File delete fail [{}]", file.getAbsolutePath());
+                LOGGER.error("File delete fail: [{}]", file.getAbsolutePath());
             }
+        }
+
+        private void lifeHandle(ExportParam exportParam) {
+            ExpLifeHandler handler = SpringUtil.getBean2(
+                    exportParam.getTemplate().getTmplCode() + ExpLifeHandler.EXP_LIFE_HANDLER);
+            if (null == handler) {
+                return;
+            }
+
+            if (exportParam.isError() || exportParam.isException()) {
+                handler.onFailure(exportParam);
+                return;
+            }
+
+            handler.onSuccess(exportParam);
         }
     }
 }
